@@ -1,0 +1,59 @@
+Sub CopyRowsBasedOnInput()
+    Dim wsSource As Worksheet
+    Dim wsTarget As Worksheet
+    Dim lastRow As Long
+    Dim currentRow As Long
+    Dim category As String
+    Dim searchText As String
+    Dim targetSheetName As String
+    Dim targetRow As Long
+    Dim wsExists As Boolean
+    Dim tbl As ListObject
+    Dim tblRange As Range
+    
+    ' Use the active worksheet as the source worksheet
+    Set wsSource = ActiveSheet
+    
+    ' Prompt user for the text to search in column O
+    searchText = InputBox("Enter the text to search in column O (e.g., '3.2'): ", "Search Text")
+    
+    ' Exit if no input is provided
+    If searchText = "" Then
+        MsgBox "No input provided. Exiting the script.", vbExclamation
+        Exit Sub
+    End If
+
+    ' Find the last row in the source worksheet
+    lastRow = wsSource.Cells(wsSource.Rows.Count, "O").End(xlUp).Row
+
+    ' Create and format the target sheet name
+    targetSheetName = "Azure210-Rule-" & Replace(searchText, ".", "")
+
+    ' Check if the target worksheet exists; if not, create it
+    On Error Resume Next
+    Set wsTarget = ThisWorkbook.Sheets(targetSheetName)
+    On Error GoTo 0
+    
+    If wsTarget Is Nothing Then
+        Set wsTarget = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+        wsTarget.Name = targetSheetName
+        ' Copy headers
+        wsSource.Rows(1).Copy Destination:=wsTarget.Rows(1)
+    End If
+
+    ' Copy rows to the target sheet
+    For currentRow = 2 To lastRow
+        category = wsSource.Cells(currentRow, "O").Value
+        If Left(category, Len(searchText)) = searchText Then
+            targetRow = wsTarget.Cells(wsTarget.Rows.Count, "A").End(xlUp).Row + 1
+            wsSource.Rows(currentRow).Copy Destination:=wsTarget.Rows(targetRow)
+        End If
+    Next currentRow
+    
+    ' Format the copied data as a table
+    Set tblRange = wsTarget.Range("A1:Z" & wsTarget.Cells(wsTarget.Rows.Count, "A").End(xlUp).Row)
+    Set tbl = wsTarget.ListObjects.Add(xlSrcRange, tblRange, , xlYes)
+    tbl.Name = "Table_" & targetSheetName
+    
+    MsgBox "Rows with the category starting with '" & searchText & "' have been copied to sheet '" & targetSheetName & "' and formatted as a table.", vbInformation
+End Sub
