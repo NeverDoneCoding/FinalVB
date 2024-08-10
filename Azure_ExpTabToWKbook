@@ -1,0 +1,59 @@
+Sub ExportSheetsToSeparateWorkbooks()
+    Dim ws As Worksheet
+    Dim wbNew As Workbook
+    Dim savePath As String
+    Dim fileName As String
+    Dim sheetCounter As Integer
+    Dim sheetName As String
+    Dim wsNew As Worksheet
+
+    ' Disable alerts to avoid pop-ups while saving
+    Application.DisplayAlerts = False
+
+    ' Loop through each worksheet in the current workbook
+    For Each ws In ThisWorkbook.Worksheets
+        ' Skip the first sheet (assuming it's the one to leave out)
+        If ws.Index > 1 Then
+            ' Create a new workbook
+            Set wbNew = Workbooks.Add
+            ' Add a new sheet in the new workbook
+            Set wsNew = wbNew.Sheets(1)
+            
+            ' Copy the content and formatting from the source sheet
+            ws.Cells.Copy Destination:=wsNew.Cells
+            
+            ' Copy column widths
+            Dim col As Integer
+            For col = 1 To ws.Columns.Count
+                wsNew.Columns(col).ColumnWidth = ws.Columns(col).ColumnWidth
+            Next col
+
+            ' Get the sheet name and format it for a file name
+            sheetName = ws.Name
+            sheetName = Replace(sheetName, "/", "_")
+            sheetName = Replace(sheetName, "\", "_")
+            sheetName = Replace(sheetName, ":", "_")
+            sheetName = Replace(sheetName, "*", "_")
+            sheetName = Replace(sheetName, "?", "_")
+            sheetName = Replace(sheetName, "[", "_")
+            sheetName = Replace(sheetName, "]", "_")
+            sheetName = Replace(sheetName, " ", "_")
+            sheetName = Left(sheetName, 31) ' Limit to 31 characters for file names
+
+            ' Set the file name and path for the new workbook
+            fileName = "Azure201-Rule-" & sheetName & ".xlsx"
+            savePath = Application.DefaultFilePath & "\" & fileName
+            
+            ' Save the new workbook
+            wbNew.SaveAs Filename:=savePath, FileFormat:=xlOpenXMLWorkbook
+            
+            ' Close the new workbook
+            wbNew.Close SaveChanges:=False
+        End If
+    Next ws
+    
+    ' Re-enable alerts
+    Application.DisplayAlerts = True
+    
+    MsgBox "Each sheet has been exported to a separate workbook and saved.", vbInformation
+End Sub
